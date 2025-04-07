@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input { display: block; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Login</h1>
+  <input type="email" id="email" placeholder="Email" />
+  <input type="password" id="senha" placeholder="Senha" />
+  <button onclick="fazerLogin()">Entrar</button>
+
+  <script>
+    async function fazerLogin() {
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+
+      const resposta = await fetch('http://localhost:3000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha })
+      });
+
+      if (resposta.ok) {
+        const dados = await resposta.json();
+        localStorage.setItem('usuario', JSON.stringify(dados));
+        alert('Login realizado com sucesso!');
+        window.location.href = 'busca.html'; 
+      } else {
+        alert('Email ou senha inválidos.');
+      }
+    }
+  </script>
+</body>
+</html>

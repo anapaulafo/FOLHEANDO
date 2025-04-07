@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Perfil do Usuário</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .resenha {
+      border-top: 1px solid #ccc;
+      margin-top: 15px;
+      padding-top: 10px;
+    }
+    .botoes {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Perfil do Usuário</h1>
+
+  <div class="botoes">
+    <button onclick="logout()">Sair</button>
+    <button onclick="voltarHome()">Voltar para Home</button>
+  </div>
+
+  <p><strong>Nome:</strong> <span id="nome"></span></p>
+  <p>
+    <strong>Bio:</strong> <span id="bio"></span>
+    <button onclick="editarBio()">Editar</button>
+  </p>
+
+  <h2>Livros Lidos e Resenhas</h2>
+  <div id="resenhas">Carregando...</div>
+
+  <script>
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    if (!usuario) {
+      window.location.href = 'login.html';
+    }
+
+    document.getElementById('nome').textContent = usuario.nome;
+    document.getElementById('bio').textContent = usuario.bio || 'Nenhuma bio cadastrada.';
+
+    function editarBio() {
+      const novaBio = prompt('Digite sua nova bio:');
+      if (novaBio !== null) {
+        fetch(`http://localhost:3000/usuarios/${usuario.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ bio: novaBio })
+        }).then(res => res.json())
+          .then(data => {
+            usuario.bio = novaBio;
+            localStorage.setItem('usuario', JSON.stringify(usuario));
+            document.getElementById('bio').textContent = novaBio;
+            alert('Bio atualizada com sucesso!');
+          }).catch(() => alert('Erro ao atualizar bio.'));
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('usuario');
+      window.location.href = 'login.html';
+    }
+
+    function voltarHome() {
+      window.location.href = 'buscar.html';
+    }
+
+    async function carregarLivros() {
+      try {
+        const res = await fetch(`http://localhost:3000/resenhas-usuario/${usuario.id}`);
+        const data = await res.json();
+
+        const container = document.getElementById('resenhas');
+        container.innerHTML = '';
+
+        if (data.length === 0) {
+          container.innerHTML = '<p>Você ainda não adicionou resenhas.</p>';
+          return;
+        }
+
+        data.forEach(item => {
+          const div = document.createElement('div');
+          div.classList.add('resenha');
+          div.innerHTML = `
+            <h3>${item.livro.titulo}</h3>
+            <p><strong>Autor:</strong> ${item.livro.autor}</p>
+            <p><strong>Status:</strong> ${item.status}</p>
+            <p><strong>Nota:</strong> ${item.nota}</p>
+            <p>${item.resenha}</p>
+          `;
+          container.appendChild(div);
+        });
+      } catch (error) {
+        console.error(error);
+        document.getElementById('resenhas').innerHTML = '<p>Erro ao carregar resenhas.</p>';
+      }
+    }
+
+    carregarLivros();
+  </script>
+</body>
+</html>

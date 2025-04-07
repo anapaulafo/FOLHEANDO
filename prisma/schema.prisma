@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb" // ou "postgresql", dependendo do seu banco
+  url      = env("DATABASE_URL")
+}
+
+enum StatusLeitura {
+  lido
+  lendo
+  nao_li
+}
+
+model User {
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  username String    @unique
+  senha    String
+  email    String    @unique
+  nome     String
+  bio      String?
+  leituras Leitura[]
+}
+
+model Livro {
+  id       String   @id @map("_id")
+  titulo   String
+  autor    String
+  leituras Leitura[]
+}
+
+model Leitura {
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  status    StatusLeitura
+  resenha   String
+  nota      Int
+
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+
+  livroId   String
+  livro     Livro          @relation(fields: [livroId], references: [id])
+}
