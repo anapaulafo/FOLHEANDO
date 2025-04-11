@@ -109,13 +109,14 @@
         const isUsuarioAtual = item.userId === usuario.id;
 
         div.innerHTML = `
-          <strong><a href="perfil.html?id=${item.userId}">${item.user.nome}</a></strong> (${item.status}) - Nota: ${item.nota}
-          <p>${item.resenha}</p>
-          ${isUsuarioAtual ? `
-            <button class="editar" data-id="${item.id}" data-status="${item.status}" data-nota="${item.nota}" data-resenha="${item.resenha}">Editar</button>
-            <button class="apagar" data-id="${item.id}">Apagar</button>
-          ` : ''}
-        `;
+  <strong>${item.user.nome}</strong> (${item.status}) - Nota: ${item.nota}
+  <p>${item.resenha}</p>
+  ${isUsuarioAtual ? `
+    <button class="editar" data-id="${item.id}" data-status="${item.status}" data-nota="${item.nota}" data-resenha="${item.resenha}">Editar</button>
+    <button class="apagar" data-id="${item.id}">Apagar</button>
+  ` : ''}
+`;
+
 
         container.appendChild(div);
 

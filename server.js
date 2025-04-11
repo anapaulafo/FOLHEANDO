@@ -260,7 +260,8 @@ app.get('/usuarios/:id', async (req, res) => {
       select: {
         id: true,
         nome: true,
-        bio: true
+        bio: true,
+        foto: true  // <- Adicione isso!
       }
     });
 
@@ -274,3 +275,49 @@ app.get('/usuarios/:id', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao buscar usuário' });
   }
 });
+
+
+//UPLOAD DE FOTO
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+// Cria pasta se não existir
+const pastaUploads = 'uploads';
+if (!fs.existsSync(pastaUploads)) {
+  fs.mkdirSync(pastaUploads);
+}
+
+// Configuração do multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, pastaUploads);
+  },
+  filename: (req, file, cb) => {
+    const extensao = path.extname(file.originalname);
+    cb(null, `foto-${Date.now()}${extensao}`);
+  }
+});
+
+const upload = multer({ storage });
+
+// Rota para upload da foto
+app.post('/upload-foto/:id', upload.single('foto'), async (req, res) => {
+  const { id } = req.params;
+  const urlFoto = `http://localhost:3000/uploads/${req.file.filename}`;
+
+
+  try {
+    const usuario = await prisma.user.update({
+      where: { id },
+      data: { foto: urlFoto }
+    });
+
+    res.json({ foto: usuario.foto });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao salvar a foto' });
+  }
+});
+
+// Servir os arquivos da pasta uploads
+app.use('/uploads', express.static('uploads'));

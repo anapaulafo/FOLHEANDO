@@ -51,6 +51,11 @@
   <h1>Perfil do Usuário</h1>
 
   <div>
+    <div>
+      <img id="fotoPerfil" src="" alt="Foto de perfil" style="max-height: 150px; border-radius: 8px;"/><br>
+      <input type="file" id="inputFoto" />
+      <button onclick="enviarFoto()">Enviar nova foto</button>
+    </div>    
     <p><strong>Nome:</strong> <span id="nome"></span></p>
     <p><strong>Bio:</strong></p>
     <p id="bio"></p>
@@ -90,7 +95,7 @@
       const res = await fetch(`http://localhost:3000/usuarios/${userId}`);
       const user = await res.json();
       usuarioAtual = user;
-
+      document.getElementById('fotoPerfil').src = user.foto || 'https://via.placeholder.com/150';
       document.getElementById('nome').innerText = user.nome;
       document.getElementById('bio').innerText = user.bio || 'Sem bio';
       document.getElementById('bem-vindo').innerText = `Bem-vindo, ${user.nome}`;
@@ -111,6 +116,28 @@
 
       await carregarPerfil();
     }
+
+    async function enviarFoto() {
+  const arquivo = document.getElementById('inputFoto').files[0];
+  if (!arquivo) return alert('Selecione uma imagem.');
+
+  const formData = new FormData();
+  formData.append('foto', arquivo);
+
+  const res = await fetch(`http://localhost:3000/upload-foto/${userId}`, {
+    method: 'POST',
+    body: formData
+  });
+
+  const dados = await res.json();
+  if (res.ok) {
+    alert('Foto atualizada!');
+    document.getElementById('fotoPerfil').src = dados.foto;
+  } else {
+    alert('Erro ao enviar foto');
+  }
+}
+
 
     async function carregarResenhas() {
       const res = await fetch(`http://localhost:3000/resenhas-usuario/${userId}`);

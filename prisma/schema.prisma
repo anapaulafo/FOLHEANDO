@@ -14,14 +14,16 @@ enum StatusLeitura {
 }
 
 model User {
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
-  username String    @unique
-  senha    String
-  email    String    @unique
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  username String
   nome     String
+  email    String  @unique
+  senha    String
   bio      String?
-  leituras Leitura[]
+  foto     String? 
+  leitura  Leitura[]
 }
+
 
 model Livro {
   id       String   @id @map("_id") 
