@@ -1,39 +1,48 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Login</title>
-  <style>
-    body { font-family: Arial; padding: 20px; }
-    input { display: block; margin-bottom: 10px; }
-  </style>
 </head>
 <body>
-  <h1>Login</h1>
-  <input type="email" id="email" placeholder="Email" />
-  <input type="password" id="senha" placeholder="Senha" />
-  <button onclick="fazerLogin()">Entrar</button>
+  <h2>Login</h2>
+  <form id="formLogin">
+    <label>Email:</label>
+    <input type="email" name="email" required /><br />
+    <label>Senha:</label>
+    <input type="password" name="senha" required /><br />
+    <button type="submit">Entrar</button>
+  </form>
 
   <script>
-    async function fazerLogin() {
-      const email = document.getElementById('email').value;
-      const senha = document.getElementById('senha').value;
+    const form = document.getElementById('formLogin');
 
-      const resposta = await fetch('http://localhost:3000/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha })
-      });
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-      if (resposta.ok) {
-        const dados = await resposta.json();
-        localStorage.setItem('usuario', JSON.stringify(dados));
-        alert('Login realizado com sucesso!');
-        window.location.href = 'busca.html'; 
-      } else {
-        alert('Email ou senha inválidos.');
+      const formData = new FormData(form);
+      const dados = Object.fromEntries(formData.entries());
+
+      try {
+        const resposta = await fetch('http://localhost:3000/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dados)
+        });
+
+        if (resposta.ok) {
+          const usuario = await resposta.json();
+          localStorage.setItem('usuario', JSON.stringify(usuario));
+          localStorage.setItem('userId', usuario.id); // ESSENCIAL
+          window.location.href = 'busca.html';
+        } else {
+          alert('Login inválido.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao conectar com o servidor.');
       }
-    }
+    });
   </script>
 </body>
 </html>

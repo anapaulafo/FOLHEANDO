@@ -41,6 +41,17 @@
     button:hover {
       background: #0056b3;
     }
+    .login-link {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .login-link a {
+      color: #007BFF;
+      text-decoration: none;
+    }
+    .login-link a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -60,6 +71,10 @@
     <input type="password" name="senha" id="senha" required>
 
     <button type="submit">Cadastrar</button>
+
+    <div class="login-link">
+      Já é cadastrado? <a href="login.html">Faça login</a>.
+    </div>
   </form>
 
   <script>

@@ -2,56 +2,95 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Detalhes do Livro</title>
-  <style>
-    body { font-family: Arial; padding: 20px; }
-    .resenha { border-top: 1px solid #ccc; margin-top: 15px; padding-top: 10px; }
-  </style>
 </head>
 <body>
+  <header style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: #eee;">
+    <div id="bem-vindo">Bem-vindo!</div>
+    <div>
+      <button onclick="window.location.href='busca.html'" style="padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer;">
+        ← Voltar para Home
+      </button>
+      <button onclick="irParaPerfil()">Meu Perfil</button>
+      <button onclick="sair()">Sair</button>
+    </div>
+  </header>
+
   <h1 id="titulo"></h1>
   <p id="autores"></p>
-  <img id="imagem" />
   <p id="descricao"></p>
+  <img id="capa" alt="Capa do livro" />
 
   <h2>Resenhas</h2>
-  <div id="resenhas">Carregando resenhas...</div>
+  <div id="resenhas"></div>
 
-  <h3>Adicionar Resenha</h3>
-
+  <h3>Escreva sua resenha</h3>
   <form id="form-resenha">
-    <label for="status">Status:</label><br />
-    <select id="status" required>
-      <option value="">Selecione</option>
-      <option value="lido">Lido</option>
-      <option value="lendo">Lendo</option>
-      <option value="não li">Não li</option>
-    </select><br /><br />
-
-    <label for="nota">Nota (0 a 10):</label><br />
-    <input type="number" id="nota" min="0" max="10" required /><br /><br />
-
-    <label for="resenha">Resenha:</label><br />
-    <textarea id="resenha" rows="4" cols="50" required></textarea><br /><br />
-
-    <button type="submit">Salvar Resenha</button>
+    <label>Status:
+      <select id="status" required>
+        <option value="Lido">Lido</option>
+        <option value="Lendo">Lendo</option>
+        <option value="Quero ler">Quero ler</option>
+      </select>
+    </label><br/>
+    <label>Nota:
+      <input type="number" id="nota" min="0" max="10" required />
+    </label><br/>
+    <label>Resenha:
+      <textarea id="resenha" required></textarea>
+    </label><br/>
+    <button type="submit">Enviar Resenha</button>
   </form>
 
   <script>
-    const usuario = JSON.parse(localStorage.getItem('usuario'));
-    if (!usuario) window.location.href = 'login.html';
-
     const params = new URLSearchParams(window.location.search);
     const id_livro = params.get('id');
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+
+    const statusMap = {
+      "Lido": "lido",
+      "Lendo": "lendo",
+      "Quero ler": "nao_li"
+    };
+
+    if (usuario) {
+      document.getElementById('bem-vindo').innerText = `Bem-vindo, ${usuario.nome}`;
+    }
+
+    function irParaPerfil() {
+      window.location.href = `perfil.html?id=${usuario.id}`;
+    }
+
+    function sair() {
+      localStorage.removeItem('usuario');
+      window.location.href = 'index.html';
+    }
+
+    let livroSelecionado = null;
 
     async function carregarLivro() {
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes/${id_livro}`);
-      const data = await res.json();
+      try {
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes/${id_livro}`);
+        const data = await res.json();
 
-      document.getElementById('titulo').innerText = data.volumeInfo.title;
-      document.getElementById('autores').innerText = "Autores: " + (data.volumeInfo.authors || []).join(', ');
-      document.getElementById('imagem').src = data.volumeInfo.imageLinks?.thumbnail || '';
-      document.getElementById('descricao').innerText = data.volumeInfo.description || '';
+        if (data) {
+          livroSelecionado = {
+            idGoogle: data.id,
+            titulo: data.volumeInfo.title || 'Sem título',
+            autores: data.volumeInfo.authors || ['Desconhecido'],
+            descricao: data.volumeInfo.description || 'Sem descrição',
+            imagem: data.volumeInfo.imageLinks?.thumbnail || ''
+          };
+
+          document.getElementById('titulo').innerText = livroSelecionado.titulo;
+          document.getElementById('autores').innerText = `Autores: ${livroSelecionado.autores.join(', ')}`;
+          document.getElementById('descricao').innerText = livroSelecionado.descricao.replace(/<[^>]+>/g, '');
+          document.getElementById('capa').src = livroSelecionado.imagem;
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados do livro:', error);
+      }
     }
 
     async function carregarResenhas() {
@@ -66,13 +105,21 @@
       data.forEach((item) => {
         const div = document.createElement('div');
         div.classList.add('resenha');
+
+        const isUsuarioAtual = item.userId === usuario.id;
+
         div.innerHTML = `
-          <strong>${item.user.nome}</strong> (${item.status}) - Nota: ${item.nota}
+          <strong><a href="perfil.html?id=${item.userId}">${item.user.nome}</a></strong> (${item.status}) - Nota: ${item.nota}
           <p>${item.resenha}</p>
+          ${isUsuarioAtual ? `
+            <button class="editar" data-id="${item.id}" data-status="${item.status}" data-nota="${item.nota}" data-resenha="${item.resenha}">Editar</button>
+            <button class="apagar" data-id="${item.id}">Apagar</button>
+          ` : ''}
         `;
+
         container.appendChild(div);
 
-        if (item.userId === usuario.id) {
+        if (isUsuarioAtual) {
           jaResenhou = true;
         }
       });
@@ -80,23 +127,60 @@
       if (jaResenhou) {
         document.getElementById('form-resenha').style.display = 'none';
       }
+
+      document.querySelectorAll('.editar').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('status').value = Object.keys(statusMap).find(key => statusMap[key] === btn.dataset.status);
+          document.getElementById('nota').value = btn.dataset.nota;
+          document.getElementById('resenha').value = btn.dataset.resenha;
+          document.getElementById('form-resenha').dataset.editandoId = btn.dataset.id;
+          document.querySelector('button[type="submit"]').innerText = 'Salvar Edição';
+          document.getElementById('form-resenha').style.display = 'block';
+        });
+      });
+
+      document.querySelectorAll('.apagar').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const confirmar = confirm('Tem certeza que deseja apagar sua resenha?');
+          if (confirmar) {
+            const res = await fetch(`http://localhost:3000/resenhas/${btn.dataset.id}`, {
+              method: 'DELETE'
+            });
+            const json = await res.json();
+            alert(json.mensagem || 'Resenha apagada!');
+            location.reload();
+          }
+        });
+      });
     }
 
     document.getElementById('form-resenha').addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      const form = e.target;
+      const editandoId = form.dataset.editandoId;
+
       const resenhaData = {
         userId: usuario.id,
         livroId: id_livro,
-        status: document.getElementById('status').value,
+        status: statusMap[document.getElementById('status').value],
         nota: parseInt(document.getElementById('nota').value),
         resenha: document.getElementById('resenha').value,
-        titulo: document.getElementById('titulo').innerText,
-        autor: document.getElementById('autores').innerText.replace('Autores: ', '')
+        titulo: livroSelecionado?.titulo || 'Sem título',
+        autor: livroSelecionado?.autores?.join(', ') || 'Desconhecido',
+        imagem: livroSelecionado?.imagem || ''
       };
 
-      const response = await fetch('http://localhost:3000/resenhas', {
-        method: 'POST',
+      console.log('Dados enviados:', resenhaData);
+
+      const url = editandoId
+        ? `http://localhost:3000/resenhas/${editandoId}`
+        : 'http://localhost:3000/resenhas';
+
+      const method = editandoId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(resenhaData)
       });
@@ -104,16 +188,15 @@
       const resultado = await response.json();
 
       if (response.ok) {
-        alert('Resenha adicionada com sucesso!');
+        alert(editandoId ? 'Resenha atualizada com sucesso!' : 'Resenha adicionada com sucesso!');
         location.reload();
       } else {
-        alert('Erro: ' + resultado.erro);
+        alert('Erro: ' + (resultado.erro || 'Erro inesperado'));
       }
     });
 
     carregarLivro();
     carregarResenhas();
   </script>
-
 </body>
 </html>

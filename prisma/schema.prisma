@@ -24,11 +24,15 @@ model User {
 }
 
 model Livro {
-  id       String   @id @map("_id")
+  id       String   @id @map("_id") 
   titulo   String
   autor    String
+  imagem   String?
   leituras Leitura[]
 }
+
+
+
 
 model Leitura {
   id        String         @id @default(auto()) @map("_id") @db.ObjectId
@@ -41,4 +45,7 @@ model Leitura {
 
   livroId   String
   livro     Livro          @relation(fields: [livroId], references: [id])
+
+  @@unique([userId, livroId]) // <- isso aqui!
 }
+
